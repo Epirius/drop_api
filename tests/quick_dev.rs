@@ -15,5 +15,16 @@ async fn quick_dev() -> Result<()> {
     })).await?;
     req_login.print().await?;
 
+    let req_create_ticket = client.do_post("/api/tickets",
+        json!(
+            {
+                "title": "Test tickets",
+            }
+        ),
+    );
+    req_create_ticket.await?.print().await?;
+
+    client.do_get("/api/tickets").await?.print().await?;
+
     Ok(())
 }

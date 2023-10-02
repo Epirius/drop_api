@@ -8,17 +8,24 @@ use axum::extract::{Path, Query};
 use serde::Deserialize;
 use tower_cookies::CookieManagerLayer;
 use tower_http::services::ServeDir;
+use crate::model::ModelController;
 
 pub use self::error::{Error, Result};
 
 mod error;
+mod model;
 mod web;
 
 #[tokio::main]
-async fn main() {
+async fn main() -> Result<()> {
+    // initialize ModelController
+    let mc = ModelController::new().await?;
+
+    // initialize routes
     let routes_all = Router::new()
         .merge(routes_hellp())
         .merge(web::routes_login::routes())
+        .nest("/api", web::routes_ticket::routes(mc.clone()))
         .layer(middleware::map_response(main_response_mapper))
         .layer(CookieManagerLayer::new())
         .fallback_service(routes_static());
@@ -28,6 +35,8 @@ async fn main() {
         .serve(routes_all.into_make_service())
         .await
         .unwrap();
+
+    Ok(())
 }
 
 async fn main_response_mapper(res: Response) -> Response {
