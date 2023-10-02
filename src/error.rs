@@ -8,7 +8,11 @@ pub enum Error {
     LoginFail,
 
     // Model errors {todo: refactor into a model errors module}
-    TicketDeleteFailIdNotFound {id: u64}
+    TicketDeleteFailIdNotFound {id: u64},
+
+    // Auth errors
+    AuthFailNoAthTokenCookie,
+    AuthFailTokenWrongFormat,
 }
 
 impl IntoResponse for Error {
