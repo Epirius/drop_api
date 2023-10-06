@@ -6,25 +6,46 @@ use axum::middleware::Next;
 use axum::RequestPartsExt;
 use axum::response::Response;
 use lazy_regex::regex_captures;
-use tower_cookies::Cookies;
+use tower_cookies::cookie::time::Weekday::Wednesday;
+use tower_cookies::{Cookie, Cookies};
 use crate::web::AUTH_TOKEN;
 use crate::{Error, Result};
 use crate::ctx::Ctx;
 
-pub async fn mw_require_auth<BODY>(
-    cookies: Cookies,
-    req: Request<BODY>,
-    next: Next<BODY>
+pub async fn mw_require_auth<B>(
+    ctx: Result<Ctx>,
+    req: Request<B>,
+    next: Next<B>
 ) -> Result<Response> {
-    println!("->> {:<12} - mw_require_auth", "MIDDLEWARE");
+    println!("->> {:<12} - mw_require_auth - {ctx:?}", "MIDDLEWARE");
+    ctx?;
+    Ok(next.run(req).await)
+}
+
+pub async fn mw_ctx_resolver<B>(
+    cookies: Cookies,
+    mut req: Request<B>,
+    next: Next<B>,
+) -> Result<Response> {
+    println!("->> {:<12} - mw_ctx_resolver", "MIDDLEWARE");
     let auth_token = cookies.get(AUTH_TOKEN).map(|c| c.value().to_string());
 
-    //TODO real auto token parsing and validation
-    let (user_id, exp, sign) = auth_token
+    let result_ctx = match auth_token
         .ok_or(Error::AuthFailNoAthTokenCookie)
-        .and_then(parse_token)?;
+        .and_then(parse_token) {
+        Ok((user_id, _exp, _sign)) => {
+            Ok(Ctx::new(user_id))
+        },
+        Err(e) => Err(e),
+    };
 
-    // todo: token components validation
+    if result_ctx.is_err()
+        && !matches!(result_ctx, Err(Error::AuthFailNoAthTokenCookie))
+    {
+        cookies.remove(Cookie::named(AUTH_TOKEN))
+    }
+
+    req.extensions_mut().insert(result_ctx);
 
     Ok(next.run(req).await)
 }
@@ -35,15 +56,11 @@ impl<S: Send + Sync> FromRequestParts<S> for Ctx {
 
     async fn from_request_parts(parts: &mut Parts, _state: &S) -> Result<Self> {
         println!("->> {:<12} - Ctx", "EXTRACTOR");
-        let cookies = parts.extract::<Cookies>().await.unwrap();
-        let auth_token = cookies.get(AUTH_TOKEN).map(|c| c.value().to_string());
-
-        //TODO real auto token parsing and validation
-        let (user_id, exp, sign) = auth_token
-            .ok_or(Error::AuthFailNoAthTokenCookie)
-            .and_then(parse_token)?;
-        // todo: token components validation
-        Ok(Ctx::new(user_id))
+        parts
+            .extensions
+            .get::<Result<Ctx>>()
+            .ok_or(Error::AuthFailCtxNotInRequestsExt)?
+            .clone()
     }
 }
 
