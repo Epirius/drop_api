@@ -1,3 +1,4 @@
+use crate::configuration::DatabaseSettings;
 use crate::ctx::Ctx;
 use crate::database::{new_client, Episode, Podcast};
 use crate::{Error, Result};
@@ -14,9 +15,9 @@ pub struct ModelController {
 }
 
 impl ModelController {
-    pub async fn new() -> Result<Self> {
+    pub async fn new(db_settings: DatabaseSettings) -> Result<Self> {
         Ok(Self {
-            db_client: new_client().await?,
+            db_client: new_client(db_settings).await?,
         })
     }
 }

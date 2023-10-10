@@ -1,3 +1,4 @@
+use crate::configuration::DatabaseSettings;
 use crate::Error;
 use chrono::{DateTime, Utc};
 use postgrest::Postgrest;
@@ -5,12 +6,10 @@ use rss::Item;
 use secrecy::{ExposeSecret, Secret};
 use serde::{Deserialize, Serialize};
 
-pub async fn new_client() -> Result<Postgrest, Error> {
-    let db_url: String = dotenv::var("DB_URL").map_err(|_| Error::MissingDbUrl)?;
-    let db_api: Secret<String> =
-        Secret::new(dotenv::var("DB_API").map_err(|_| Error::MissingDbApi)?);
+pub async fn new_client(settings: DatabaseSettings) -> Result<Postgrest, Error> {
     println!("->>{:<12} READ ENV", "DATABASE");
-    let client = Postgrest::new(db_url).insert_header("apikey", db_api.expose_secret());
+    let client =
+        Postgrest::new(settings.host).insert_header("apikey", settings.secret_key.expose_secret());
     Ok(client)
 }
 
