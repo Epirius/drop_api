@@ -1,13 +1,12 @@
-use std::time::{SystemTime, UNIX_EPOCH};
-use axum::http::{Method, Uri};
+use crate::ctx::Ctx;
+use crate::error::ClientError;
 use crate::{Error, Result};
+use axum::http::{Method, Uri};
 use serde::Serialize;
 use serde_json::{json, Value};
 use serde_with::skip_serializing_none;
+use std::time::{SystemTime, UNIX_EPOCH};
 use uuid::Uuid;
-use crate::ctx::Ctx;
-use crate::error::ClientError;
-
 
 pub async fn log_request(
     uuid: Uuid,
@@ -27,7 +26,7 @@ pub async fn log_request(
         .ok()
         .and_then(|mut v| v.get_mut("data").map(|v| v.take()));
 
-    let log_line = RequestLogLine{
+    let log_line = RequestLogLine {
         uuid: uuid.to_string(),
         timestamp: timestamp.to_string(),
 

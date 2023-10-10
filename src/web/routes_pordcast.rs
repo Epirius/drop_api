@@ -1,34 +1,47 @@
-use axum::extract::{FromRef, Path, State};
-use axum::{Json, Router};
-use axum::routing::{delete, get, post};
-use serde_json::json;
 use crate::ctx::Ctx;
-use crate::database::Podcast;
-use crate::model::{ModelController};
+use crate::database::{Episode, Podcast, PodcastMetadata};
+use crate::model::ModelController;
 use crate::Result;
-
-
-// #[derive(Clone, FromRef)]
-// struct AppState {
-//     mc: ModelController,
-//     // TODO: can add stuff like db connector here, that can be injected into the routes via .with_state
-// }
+use axum::extract::{Path, State};
+use axum::routing::get;
+use axum::{Json, Router};
+use serde_json::json;
 
 pub fn routes(mc: ModelController) -> Router {
-    // let app_state = AppState { mc };
     Router::new()
         .route("/podcast/meta/:uuid", get(get_podcast_metadata))
-        // .with_state(app_state)
+        .route("/podcast/data/:uuid", get(get_podcast_data))
+        .route("/podcast/episode/:uuid", get(get_episode_list))
         .with_state(mc)
 }
 
 async fn get_podcast_metadata(
     State(mc): State<ModelController>,
     ctx: Ctx,
-    Path(uuid): Path<String>
-) -> Result<Json<Podcast>> {
-    println!("->> {:<12} - get_podcast_from_uuid", "HANDLER");
-    // println!("uuid: {}", uuid);
+    Path(guid): Path<String>,
+) -> Result<Json<PodcastMetadata>> {
+    println!("->> {:<12} - get_podcast_metadata", "HANDLER");
+    let podcast = mc.get_podcast(guid).await?;
+    let metadata: PodcastMetadata = podcast.into();
+    Ok(Json(metadata))
+}
 
-    todo!()
+async fn get_podcast_data(
+    State(mc): State<ModelController>,
+    ctx: Ctx,
+    Path(guid): Path<String>,
+) -> Result<Json<Podcast>> {
+    println!("->> {:<12} - get_podcast_data", "HANDLER");
+    let podcast = mc.get_podcast(guid).await?;
+    Ok(Json(podcast))
+}
+
+async fn get_episode_list(
+    State(mc): State<ModelController>,
+    ctx: Ctx,
+    Path(guid): Path<String>,
+) -> Result<Json<Vec<Episode>>> {
+    println!("->> {:<12} - get_episode_data", "HANDLER");
+    let episode_list = mc.get_episode_list(guid).await?;
+    Ok(Json(episode_list))
 }

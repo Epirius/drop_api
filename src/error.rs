@@ -10,7 +10,7 @@ pub enum Error {
     LoginFail,
 
     // Model errors {todo: refactor into a model errors module}
-    TicketDeleteFailIdNotFound {id: u64},
+    TicketDeleteFailIdNotFound { id: u64 },
 
     // Auth errors
     AuthFailNoAthTokenCookie,
@@ -41,9 +41,7 @@ impl Error {
             // Auth
             Self::AuthFailNoAthTokenCookie
             | Self::AuthFailTokenWrongFormat
-            | Self::AuthFailCtxNotInRequestsExt => {
-                (StatusCode::FORBIDDEN, ClientError::NO_AUTH)
-            }
+            | Self::AuthFailCtxNotInRequestsExt => (StatusCode::FORBIDDEN, ClientError::NO_AUTH),
             // Model
             Self::TicketDeleteFailIdNotFound { .. } => {
                 (StatusCode::BAD_REQUEST, ClientError::INVALID_PARAMS)
@@ -51,7 +49,7 @@ impl Error {
             // Fallback
             _ => (
                 StatusCode::INTERNAL_SERVER_ERROR,
-                ClientError::SERVICE_ERROR
+                ClientError::SERVICE_ERROR,
             ),
         }
     }
