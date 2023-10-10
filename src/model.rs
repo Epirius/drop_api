@@ -16,6 +16,11 @@ pub struct TicketForCrate {
     pub title: String,
 }
 
+// #[derive(Clone, Debug, Serialize)]
+// pub struct Podcast {
+//     pub name: String,
+// }
+
 #[derive(Clone, Debug)]
 pub struct ModelController {
     // TODO turn this into a database controller
