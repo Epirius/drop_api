@@ -1,7 +1,13 @@
 Backend for [DropPod](https://github.com/Epirius/DropPod)
 
+### Setup
+```cp ./configuration/example.secret.yaml ./configuration/secret.yaml ```
+
+update `secret_key` in secret.yaml
+
 -----
-Hotreload dev:
+### Commands
+Hot reload dev:
 ```cargo watch -q -c -w src/ -x run```
 
 Test script during dev:
