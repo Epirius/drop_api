@@ -21,6 +21,8 @@ pub enum Error {
     MissingDbApi,
     DbConnectionError,
     DbSelectError,
+
+    ConfigError,
 }
 
 impl IntoResponse for Error {

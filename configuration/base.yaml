@@ -1,0 +1,4 @@
+application:
+  port: 4000
+database:
+  host: "https://vaajvmpecyglgilhdtan.supabase.co/rest/v1"
