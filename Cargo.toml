@@ -20,6 +20,7 @@ uuid = { version = "1", features = ["v4", "fast-rng",]}
 postgrest = "1.0"
 dotenv = "0.15.0"
 chrono = { version = "0.4", features = ["serde"] }
+secrecy = "0.8.0"
 
 [dev-dependencies]
 anyhow = "1"

@@ -5,7 +5,7 @@ use crate::Error;
 
 pub async fn new_client() -> Result<Postgrest, Error> {
     let db_url: String = dotenv::var("DB_URL").map_err(|_| Error::MissingDbUrl)?;
-    let db_api: String = dotenv::var("DB_API").map_err(|_| Error::MissingDbApi)?;
+    let db_api: Secret<String> = Secret::new(dotenv::var("DB_API").map_err(|_| Error::MissingDbApi)?);
     println!("->> ENV VARS {:<12} - {}", db_url, db_api);
     let client = Postgrest::new(db_url)
        .insert_header(

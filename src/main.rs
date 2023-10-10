@@ -12,7 +12,6 @@ use tower_cookies::CookieManagerLayer;
 use tower_http::services::ServeDir;
 use uuid::Uuid;
 use crate::ctx::Ctx;
-use crate::database::Podcast;
 use crate::log::log_request;
 use crate::model::{ModelController};
 
@@ -33,15 +32,14 @@ async fn main() -> Result<()> {
     // let routes_api = web::routes_ticket::routes(mc.clone())
     //     .route_layer(middleware::from_fn(web::mw_auth::mw_require_auth));
 
-    let routes_podcast = web::routes_pordcast::routes(mc.clone())
+    let routes_api = web::routes_pordcast::routes(mc.clone())
         .route_layer(middleware::from_fn(web::mw_auth::mw_require_auth)); // TODO: dont require auth for all routes
 
     // initialize routes
     let routes_all = Router::new()
         .merge(routes_hello())
         .merge(web::routes_login::routes())
-        // .nest("/api", routes_api)
-        .nest("/api",routes_podcast )
+        .nest("/api", routes_api)
         .layer(middleware::map_response(main_response_mapper))
         .layer(middleware::from_fn_with_state(
             mc.clone(),
@@ -50,6 +48,7 @@ async fn main() -> Result<()> {
         .layer(CookieManagerLayer::new())
         .fallback_service(routes_static());
     let addr = SocketAddr::from(([127, 0, 0, 1], 4000));
+    // TODO get port and ip from env, see z2p for prod and test importing
     println!("->> LISTENING on {addr}\n");
     axum::Server::bind(&addr)
         .serve(routes_all.into_make_service())
@@ -91,6 +90,7 @@ async fn main_response_mapper(
 }
 
 fn routes_static() -> Router {
+    // TODO dont allow static files to be served
     Router::new().nest_service("/", get_service(ServeDir::new("./")))
 }
 

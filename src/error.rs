@@ -19,6 +19,8 @@ pub enum Error {
 
     MissingDbUrl,
     MissingDbApi,
+    DbConnectionError,
+    DbSelectError,
 }
 
 impl IntoResponse for Error {
