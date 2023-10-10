@@ -16,6 +16,10 @@ pub enum Error {
     AuthFailNoAthTokenCookie,
     AuthFailTokenWrongFormat,
     AuthFailCtxNotInRequestsExt,
+
+    MissingDbUrl,
+    MissingDbApi,
+    DbConnectionError,
 }
 
 impl IntoResponse for Error {
