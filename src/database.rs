@@ -1,8 +1,8 @@
 use sqlx::postgres::PgPoolOptions;
 use secrecy::{ExposeSecret, Secret};
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use chrono::{DateTime, Utc};
-use sqlx::PgPool;
+use sqlx::{FromRow, PgPool};
 use crate::Error;
 
 
@@ -17,7 +17,8 @@ pub async fn new_client() -> Result<PgPool, Error> {
     Ok(client)
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Serialize, FromRow, Debug)]
+#[sqlx(rename_all = "camelCase")]
 pub struct Podcast {
     pub guid: String,
     pub url: String,

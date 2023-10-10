@@ -3,30 +3,32 @@ use axum::{Json, Router};
 use axum::routing::{delete, get, post};
 use serde_json::json;
 use crate::ctx::Ctx;
-use crate::model::{ModelController, Ticket, TicketForCrate};
+use crate::database::Podcast;
+use crate::model::{ModelController};
 use crate::Result;
 
 
-#[derive(Clone, FromRef)]
-struct AppState {
-    mc: ModelController,
-    // TODO: can add stuff like db connector here, that can be injected into the routes via .with_state
-}
+// #[derive(Clone, FromRef)]
+// struct AppState {
+//     mc: ModelController,
+//     // TODO: can add stuff like db connector here, that can be injected into the routes via .with_state
+// }
 
 pub fn routes(mc: ModelController) -> Router {
-    let app_state = AppState { mc };
+    // let app_state = AppState { mc };
     Router::new()
-        .route("/podcast/:uuid", get(get_podcast_from_uuid))
-        .with_state(app_state)
+        .route("/podcast/meta/:uuid", get(get_podcast_metadata))
+        // .with_state(app_state)
+        .with_state(mc)
 }
 
-async fn get_podcast_from_uuid(
+async fn get_podcast_metadata(
     State(mc): State<ModelController>,
     ctx: Ctx,
     Path(uuid): Path<String>
-) -> Result<Json<Ticket>> {
+) -> Result<Json<Podcast>> {
     println!("->> {:<12} - get_podcast_from_uuid", "HANDLER");
-    println!("uuid: {}", uuid);
+    // println!("uuid: {}", uuid);
 
     todo!()
 }
