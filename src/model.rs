@@ -63,4 +63,28 @@ impl ModelController {
             .collect();
         Ok(episodes)
     }
+
+    pub async fn get_podcast_list(&self, category: String, quantity: usize, lang: Option<String>) -> Result<Vec<Podcast>> {
+        println!("->> {:<12} - get_podcast_list", "HANDLER");
+        let mut query = self
+            .db_client
+            .from("Podcast")
+            .ilike("category", format!("%{}%", category))
+            .order("priority.desc")
+            .limit(quantity);
+
+        if let Some(lang) = lang {
+            query = query.ilike("languageCode",lang);
+        }
+
+        let data = query
+            .execute()
+            .await
+            .map_err(|_| Error::DbSelectError)?
+            .text()
+            .await
+            .map_err(|_| Error::DbSelectError)?;
+        let data = serde_json::from_str::<Vec<Podcast>>(&data).map_err(|_| Error::DbSelectError)?;
+        Ok(data)
+    }
 }
