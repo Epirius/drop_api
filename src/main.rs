@@ -33,8 +33,8 @@ async fn main() -> Result<()> {
     // initialize ModelController
     let mc = ModelController::new(settings.database).await?;
 
-    let routes_api = web::routes_pordcast::routes(mc.clone())
-        .route_layer(middleware::from_fn(web::mw_auth::mw_require_auth)); // TODO: dont require auth for all routes
+    let routes_api = web::routes_pordcast::routes(mc.clone());
+        //.route_layer(middleware::from_fn(web::mw_auth::mw_require_auth)); // TODO: dont require auth for all routes
 
     // initialize routes
     let routes_all = Router::new()
@@ -49,7 +49,6 @@ async fn main() -> Result<()> {
         .layer(CookieManagerLayer::new())
         .fallback_service(routes_static());
     let addr = SocketAddr::from((settings.application.host, settings.application.port));
-    // TODO get port and ip from env, see z2p for prod and test importing
     println!("->> LISTENING on {addr}\n");
     axum::Server::bind(&addr)
         .serve(routes_all.into_make_service())
