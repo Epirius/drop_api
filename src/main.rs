@@ -14,6 +14,7 @@ use serde_json::json;
 use std::net::SocketAddr;
 use tower_cookies::CookieManagerLayer;
 use tower_http::services::ServeDir;
+use tower_http::cors::{Any, CorsLayer};
 use uuid::Uuid;
 
 pub use self::error::{Error, Result};
@@ -29,6 +30,10 @@ mod web;
 #[tokio::main]
 async fn main() -> Result<()> {
     let settings = configuration::get_configuration().map_err(|_| Error::ConfigError)?;
+
+    let cors = CorsLayer::new()
+        .allow_methods([Method::GET, Method::POST])
+        .allow_origin(Any);
 
     // initialize ModelController
     let mc = ModelController::new(settings.database).await?;
@@ -47,6 +52,7 @@ async fn main() -> Result<()> {
             web::mw_auth::mw_ctx_resolver,
         ))
         .layer(CookieManagerLayer::new())
+        .layer(cors)
         .fallback_service(routes_static());
     let addr = SocketAddr::from((settings.application.host, settings.application.port));
     println!("->> LISTENING on {addr}\n");

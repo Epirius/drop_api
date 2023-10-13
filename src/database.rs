@@ -19,6 +19,7 @@ impl From<Podcast> for PodcastMetadata {
             guid: podcast.guid,
             url: podcast.url,
             title: podcast.title,
+            description: podcast.description,
             image_url: podcast.image_url,
             category: podcast.category,
             language_code: podcast.language_code,
@@ -56,6 +57,7 @@ pub struct PodcastMetadata {
     pub guid: String,
     pub url: String,
     pub title: String,
+    pub description: String,
     #[serde(alias = "imageUrl")]
     pub image_url: String,
     pub category: String,
