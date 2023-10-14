@@ -13,7 +13,12 @@ Hot reload dev:
 Test script during dev:
 ```cargo watch -q -c -w tests/ -x "test -q quick_dev -- --nocapture"```
 
-
+-----
+### Docker
+##### build 
+```docker build -t drop:v1.0 .```
+##### run
+```docker run -p 4000:4000 drop:v1.0```
 
 
 -----
