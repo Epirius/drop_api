@@ -70,6 +70,7 @@ pub struct Episode {
     pub title: Option<String>,
     pub description: Option<String>,
     pub audio_url: Option<String>,
+    pub guid: Option<String>,
     pub date: Option<String>,
     pub image_url: Option<String>,
     pub episode: Option<String>,
@@ -85,6 +86,7 @@ impl From<Item> for Episode {
                 .or(item.itunes_ext.clone().map(|i| i.summary).flatten())
                 .or(item.itunes_ext.clone().map(|i| i.subtitle).flatten()),
             audio_url: item.enclosure.map(|i| i.url).or(item.link),
+            guid: item.guid.map(|guid| guid.value),
             date: item.pub_date,
             image_url: item.itunes_ext.clone().map(|i| i.image).flatten(),
             episode: item.itunes_ext.clone().map(|i| i.episode).flatten(),
