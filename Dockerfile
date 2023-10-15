@@ -23,4 +23,6 @@ RUN apt-get update -y \
 COPY --from=builer /app/target/release/drop_api drop_api
 COPY configuration configuration
 ENV APP_ENVIRONMENT production
+ENV PORT 8080
+ENV HOST 0.0.0.0
 CMD ["./drop_api"]
