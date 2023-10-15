@@ -27,8 +27,8 @@ mod log;
 mod model;
 mod web;
 
-#[tokio::main]
-async fn main() -> Result<()> {
+#[shuttle_runtime::main]
+pub async fn main() -> shuttle_axum::ShuttleAxum  {
     let settings = configuration::get_configuration().map_err(|_| Error::ConfigError)?;
 
     let cors = CorsLayer::new()
@@ -54,13 +54,13 @@ async fn main() -> Result<()> {
         .layer(CookieManagerLayer::new())
         .layer(cors)
         .fallback_service(routes_static());
-    let addr = SocketAddr::from((settings.application.host, settings.application.port));
-    println!("->> LISTENING on {addr}\n");
-    axum::Server::bind(&addr)
-        .serve(routes_all.into_make_service())
-        .await
-        .unwrap();
-    Ok(())
+    // let addr = SocketAddr::from((settings.application.host, settings.application.port));
+    // println!("->> LISTENING on {addr}\n");
+    // let server = axum::Server::bind(&addr)
+    //     .serve(routes_all.into_make_service())
+    //     .await
+    //     .unwrap();
+    Ok(routes_all.into())
 }
 
 async fn main_response_mapper(

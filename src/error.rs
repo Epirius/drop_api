@@ -65,3 +65,9 @@ pub enum ClientError {
     INVALID_PARAMS,
     SERVICE_ERROR,
 }
+
+impl From<Error> for shuttle_runtime::Error {
+    fn from(err: Error) -> Self {
+        err.into()
+    }
+}
