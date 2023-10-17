@@ -39,7 +39,7 @@ pub async fn main(
         .allow_origin(Any);
 
     // initialize ModelController
-    let mc = ModelController::new(settings.database).await?;
+    let mc = ModelController::new(settings).await?;
 
     let routes_api = web::routes_pordcast::routes(mc.clone());
         //.route_layer(middleware::from_fn(web::mw_auth::mw_require_auth)); // TODO: dont require auth for all routes
@@ -57,12 +57,6 @@ pub async fn main(
         .layer(CookieManagerLayer::new())
         .layer(cors)
         .fallback_service(routes_static());
-    // let addr = SocketAddr::from((settings.application.host, settings.application.port));
-    // println!("->> LISTENING on {addr}\n");
-    // let server = axum::Server::bind(&addr)
-    //     .serve(routes_all.into_make_service())
-    //     .await
-    //     .unwrap();
     Ok(routes_all.into())
 }
 
