@@ -12,6 +12,7 @@ use axum::{middleware, Json, Router};
 use serde::Deserialize;
 use serde_json::json;
 use std::net::SocketAddr;
+use shuttle_secrets::SecretStore;
 use tower_cookies::CookieManagerLayer;
 use tower_http::services::ServeDir;
 use tower_http::cors::{Any, CorsLayer};
@@ -28,8 +29,10 @@ mod model;
 mod web;
 
 #[shuttle_runtime::main]
-pub async fn main() -> shuttle_axum::ShuttleAxum  {
-    let settings = configuration::get_configuration().map_err(|_| Error::ConfigError)?;
+pub async fn main(
+    #[shuttle_secrets::Secrets] secrets: SecretStore,
+) -> shuttle_axum::ShuttleAxum  {
+    let settings = configuration::get_configuration(&secrets).map_err(|_| Error::ConfigError)?;
 
     let cors = CorsLayer::new()
         .allow_methods([Method::GET, Method::POST])

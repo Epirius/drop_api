@@ -2,3 +2,4 @@
 .idea/
 /configuration/secret.yaml
 /Secrets.toml
+/Secrets*.toml
