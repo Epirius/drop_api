@@ -8,12 +8,7 @@ use axum::{Json, Router};
 use serde_json::json;
 use serde::Deserialize;
 
-#[derive(Debug, Deserialize)]
-struct ByCategoryParams {
-    category: String,
-    quantity: Option<usize>,
-    lang: Option<String>,
-}
+
 
 pub fn routes(mc: ModelController) -> Router {
     Router::new()
@@ -21,6 +16,7 @@ pub fn routes(mc: ModelController) -> Router {
         .route("/podcast/data/:uuid", get(get_podcast_data))
         .route("/podcast/episode/:uuid", get(get_episode_list))
         .route("/podcast/list", get(get_podcasts_by_category))
+        .route("/podcast/search", get(get_podcasts_by_search))
         .with_state(mc)
 }
 
@@ -53,6 +49,13 @@ async fn get_episode_list(
     Ok(Json(episode_list))
 }
 
+#[derive(Debug, Deserialize)]
+struct ByCategoryParams {
+    category: String,
+    quantity: Option<usize>,
+    lang: Option<String>,
+}
+
 async fn get_podcasts_by_category(
     State(mc): State<ModelController>,
     Query(params): Query<ByCategoryParams>,
@@ -63,3 +66,22 @@ async fn get_podcasts_by_category(
     let metadata_list: Vec<PodcastMetadata> = podcasts.into_iter().map(|p| p.into()).collect();
     Ok(Json(metadata_list))
 }
+
+#[derive(Debug, Deserialize)]
+struct BySearchParams {
+    search: String,
+}
+
+async fn get_podcasts_by_search(
+    State(mc): State<ModelController>,
+    Query(params): Query<BySearchParams>,
+) -> Result<Json<Vec<PodcastMetadata>>> {
+    println!("->> {:<12} - get_podcasts_by_search", "HANDLER");
+    let search_query = params.search;
+    let podcasts = mc.get_podcast_list_by_search(search_query).await?;
+    let metadata_list: Vec<PodcastMetadata> = podcasts.into_iter().map(|p| p.into()).collect();
+    Ok(Json(metadata_list))
+}
+
+// TODO add episode time played
+

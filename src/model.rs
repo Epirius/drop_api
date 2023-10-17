@@ -69,7 +69,7 @@ impl ModelController {
         let mut query = self
             .db_client
             .from("Podcast")
-            .ilike("category", format!("%{}%", category))
+            .ilike("category", format!("%{}%", category)) // TODO: change from ilike to full text search
             .order("priority.desc")
             .limit(quantity);
 
@@ -86,5 +86,25 @@ impl ModelController {
             .map_err(|_| Error::DbSelectError)?;
         let data = serde_json::from_str::<Vec<Podcast>>(&data).map_err(|_| Error::DbSelectError)?;
         Ok(data)
+    }
+
+    pub async fn get_podcast_list_by_search(&self, search: String) -> Result<Vec<Podcast>> {
+        println!("->> {:<12} - get_podcast_list_by_search", "HANDLER");
+        let mut query = self
+            .db_client
+            .from("Podcast")
+            .wfts("title", search, None)
+            .limit(10);
+
+        let data = query
+            .execute()
+            .await
+            .map_err(|_| Error::DbSelectError)?
+            .text()
+            .await
+            .map_err(|_| Error::DbSelectError)?;
+        let data = serde_json::from_str::<Vec<Podcast>>(&data).map_err(|_| Error::DbSelectError)?;
+        Ok(data)
+
     }
 }
