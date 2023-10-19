@@ -28,6 +28,26 @@ impl From<Podcast> for PodcastMetadata {
 }
 
 #[derive(Deserialize, Debug, Serialize)]
+pub struct Subscribe {
+    pub user_id: String,
+    #[serde(alias = "podcastGuid")]
+    pub podcast_guid: String,
+    pub created_at: DateTime<Utc>,
+}
+
+#[derive(Deserialize, Debug, Serialize)]
+pub struct WrappedPodcast {
+    #[serde(alias = "Podcast")]
+    pub podcast: Podcast,
+}
+
+#[derive(Deserialize, Debug, Serialize)]
+pub struct FrontpagePodcasts {
+    pub editors_choice: Vec<PodcastMetadata>,
+    pub popular: Vec<PodcastMetadata>,
+}
+
+#[derive(Deserialize, Debug, Serialize)]
 pub struct Podcast {
     pub guid: String,
     pub url: String,
