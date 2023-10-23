@@ -1,5 +1,5 @@
 use crate::ctx::Ctx;
-use crate::database::{Episode, Podcast, PodcastMetadata};
+use crate::database::{Episode, FrontpagePodcasts, Podcast, PodcastMetadata, Subscribe};
 use crate::model::ModelController;
 use crate::Result;
 use axum::extract::{Path, Query, State};
@@ -17,6 +17,7 @@ pub fn routes(mc: ModelController) -> Router {
         .route("/podcast/episode/:uuid", get(get_episode_list))
         .route("/podcast/list", get(get_podcasts_by_category))
         .route("/podcast/search", get(get_podcasts_by_search))
+        .route("/podcast/frontpage", get(get_frontpage_podcasts))
         .with_state(mc)
 }
 
@@ -81,6 +82,18 @@ async fn get_podcasts_by_search(
     let podcasts = mc.get_podcast_list_by_search(search_query).await?;
     let metadata_list: Vec<PodcastMetadata> = podcasts.into_iter().map(|p| p.into()).collect();
     Ok(Json(metadata_list))
+}
+
+async fn get_frontpage_podcasts(
+    State(mc): State<ModelController>,
+) -> Result<Json<FrontpagePodcasts>> {
+    let editor_uuid = "4e8e7da8-3ef9-4ab5-afb5-b9b14194aca9";
+    let podcasts = mc.get_subscribed_podcasts(editor_uuid).await?;
+    let metadata_list: Vec<PodcastMetadata> = podcasts.into_iter().map(|p| p.into()).collect();
+    Ok(Json(FrontpagePodcasts {
+        editors_choice: metadata_list,
+        popular: Vec::new(),
+    }))
 }
 
 // TODO add episode time played

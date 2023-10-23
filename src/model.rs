@@ -1,6 +1,6 @@
 use crate::configuration::DatabaseSettings;
 use crate::ctx::Ctx;
-use crate::database::{new_client, Episode, Podcast};
+use crate::database::{new_client, Episode, Podcast, Subscribe, WrappedPodcast};
 use crate::{Error, Result};
 use chrono::{DateTime, Utc};
 use postgrest::Postgrest;
@@ -8,6 +8,7 @@ use rss::Channel;
 use serde::{Deserialize, Serialize};
 use std::io::{BufReader, Cursor};
 use std::sync::{Arc, Mutex};
+use uuid::Uuid;
 
 #[derive(Clone)]
 pub struct ModelController {
@@ -105,6 +106,24 @@ impl ModelController {
             .map_err(|_| Error::DbSelectError)?;
         let data = serde_json::from_str::<Vec<Podcast>>(&data).map_err(|_| Error::DbSelectError)?;
         Ok(data)
+    }
 
+    pub async fn get_subscribed_podcasts(&self, user_id: &str) -> Result<Vec<Podcast>> {
+       println!("->> {:<12} - get_subscribed_podcasts", "HANDLER");
+        let mut query = self
+            .db_client
+            .from("Subscribe")
+            .select("Podcast(*)");
+        let data = query
+            .execute()
+            .await
+            .map_err(|_| Error::DbSelectError)?
+            .text()
+            .await
+            .map_err(|_| Error::DbSelectError)?;
+        let data = serde_json::from_str::<Vec<WrappedPodcast>>(&data).map_err(|_| Error::DbSelectError)?
+            .into_iter()
+            .map(|p| p.podcast).collect();
+        Ok(data)
     }
 }
