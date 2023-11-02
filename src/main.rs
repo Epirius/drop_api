@@ -3,7 +3,7 @@
 use crate::ctx::Ctx;
 use crate::database::Podcast;
 use crate::log::log_request;
-use crate::model::ModelController;
+use crate::model::base::ModelController;
 use axum::extract::{Path, Query};
 use axum::http::{Method, Uri};
 use axum::response::{Html, IntoResponse, Response};
@@ -27,8 +27,8 @@ mod ctx;
 mod database;
 mod error;
 mod log;
-mod model;
 mod web;
+mod model;
 
 #[shuttle_runtime::main]
 pub async fn main(#[shuttle_secrets::Secrets] secrets: SecretStore) -> shuttle_axum::ShuttleAxum {
@@ -42,7 +42,7 @@ pub async fn main(#[shuttle_secrets::Secrets] secrets: SecretStore) -> shuttle_a
     let settings = configuration::get_configuration(&secrets).map_err(|_| Error::ConfigError)?;
 
     let cors = CorsLayer::new()
-        .allow_methods([Method::GET, Method::POST])
+        .allow_methods([Method::GET, Method::POST, Method::DELETE]) // TODO maybe break methods up base on the specific routes
         .allow_credentials(true)
         .allow_origin([
             "http://localhost:3000".parse().unwrap(),
@@ -55,7 +55,10 @@ pub async fn main(#[shuttle_secrets::Secrets] secrets: SecretStore) -> shuttle_a
     // initialize ModelController
     let mc = ModelController::new(settings).await?;
 
-    let routes_api = web::routes_pordcast::routes(mc.clone());
+    let routes_api =
+        web::routes_subscribe::routes(mc.clone())
+        .route_layer(middleware::from_fn(web::mw_auth::mw_require_auth)) // TODO: dont require auth for all routes
+            .merge(web::routes_pordcast::routes(mc.clone()));
     //.route_layer(middleware::from_fn(web::mw_auth::mw_require_auth)); // TODO: dont require auth for all routes
 
     // initialize routes

@@ -24,6 +24,8 @@ pub enum Error {
     DbConnectionError,
     DbSelectError,
     DbDeserializeError,
+    DbInsertError,
+    DbDeleteError,
 
     ConfigError,
 }
