@@ -42,7 +42,7 @@ pub async fn main(#[shuttle_secrets::Secrets] secrets: SecretStore) -> shuttle_a
     let settings = configuration::get_configuration(&secrets).map_err(|_| Error::ConfigError)?;
 
     let cors = CorsLayer::new()
-        .allow_methods([Method::GET, Method::POST])
+        .allow_methods([Method::GET, Method::POST, Method::DELETE]) // TODO maybe break methods up base on the specific routes
         .allow_credentials(true)
         .allow_origin([
             "http://localhost:3000".parse().unwrap(),
