@@ -54,7 +54,6 @@ pub async fn main(
     // initialize routes
     let routes_all = Router::new()
         .merge(routes_hello())
-        .merge(web::routes_login::routes())
         .nest("/api", routes_api)
         .layer(middleware::map_response(main_response_mapper))
         .layer(middleware::from_fn_with_state(
