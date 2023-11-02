@@ -11,11 +11,13 @@ use axum::routing::{get, get_service};
 use axum::{middleware, Json, Router};
 use serde::Deserialize;
 use serde_json::json;
-use std::net::SocketAddr;
 use shuttle_secrets::SecretStore;
+use std::net::SocketAddr;
 use tower_cookies::CookieManagerLayer;
-use tower_http::services::ServeDir;
 use tower_http::cors::{Any, CorsLayer};
+use tower_http::services::ServeDir;
+use tracing::{debug, info};
+use tracing_subscriber::EnvFilter;
 use uuid::Uuid;
 
 pub use self::error::{Error, Result};
@@ -29,9 +31,14 @@ mod model;
 mod web;
 
 #[shuttle_runtime::main]
-pub async fn main(
-    #[shuttle_secrets::Secrets] secrets: SecretStore,
-) -> shuttle_axum::ShuttleAxum  {
+pub async fn main(#[shuttle_secrets::Secrets] secrets: SecretStore) -> shuttle_axum::ShuttleAxum {
+    println!(" - - - - {:?}", EnvFilter::from_default_env());
+    tracing_subscriber::fmt()
+        .with_target(false)
+        // .with_env_filter(EnvFilter::from_default_env())
+        .with_env_filter("debug")
+        .init();
+
     let settings = configuration::get_configuration(&secrets).map_err(|_| Error::ConfigError)?;
 
     let cors = CorsLayer::new()
@@ -49,7 +56,7 @@ pub async fn main(
     let mc = ModelController::new(settings).await?;
 
     let routes_api = web::routes_pordcast::routes(mc.clone());
-        //.route_layer(middleware::from_fn(web::mw_auth::mw_require_auth)); // TODO: dont require auth for all routes
+    //.route_layer(middleware::from_fn(web::mw_auth::mw_require_auth)); // TODO: dont require auth for all routes
 
     // initialize routes
     let routes_all = Router::new()
@@ -72,7 +79,7 @@ async fn main_response_mapper(
     req_method: Method,
     res: Response,
 ) -> Response {
-    println!("->> {:<12} - main_response_mapper", "HANDLER");
+    info!("->> {:<12} - main_response_mapper", "HANDLER");
     let uuid = Uuid::new_v4();
     let service_error = res.extensions().get::<Error>();
     let client_status_error = service_error.map(|se| se.client_status_and_error());
@@ -85,13 +92,13 @@ async fn main_response_mapper(
                         "req_uuid": uuid.to_string(),
                     }
             });
-            println!("  ->> client_error_body: {client_error_body}");
+            debug!("client_error_body: {client_error_body}");
             (*status_code, Json(client_error_body)).into_response()
         });
     let client_error = client_status_error.unzip().1;
     log_request(uuid, req_method, uri, ctx, service_error, client_error).await;
 
-    println!();
+    debug!("\n");
     error_response.unwrap_or(res)
 }
 
@@ -113,7 +120,7 @@ struct HelloParams {
 
 // /hello?name=Felix
 async fn handler_hello(Query(params): Query<HelloParams>) -> impl IntoResponse {
-    println!("--> {:<12} - handler_hello - {params:?}", "HANDLER");
+    debug!("{:<12} - handler_hello - {params:?}", "HANDLER");
 
     let name = params.name.as_deref().unwrap_or("world");
     Html(format!("Hello, {name}!"))
@@ -121,6 +128,6 @@ async fn handler_hello(Query(params): Query<HelloParams>) -> impl IntoResponse {
 
 // /hello2/Felix
 async fn handler_hello2(Path(name): Path<String>) -> impl IntoResponse {
-    println!("--> {:<12} - handler_hello2 - {name:?}", "HANDLER");
+    debug!("{:<12} - handler_hello2 - {name:?}", "HANDLER");
     Html(format!("Hello, {name}!"))
 }

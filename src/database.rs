@@ -5,9 +5,10 @@ use postgrest::Postgrest;
 use rss::Item;
 use secrecy::{ExposeSecret, Secret};
 use serde::{Deserialize, Serialize};
+use tracing::debug;
 
 pub async fn new_client(settings: DatabaseSettings) -> Result<Postgrest, Error> {
-    println!("->>{:<12} READ ENV", "DATABASE");
+    debug!("{:<12} READ ENV", "DATABASE");
     let client =
         Postgrest::new(settings.host).insert_header("apikey", settings.secret_key.expose_secret());
     Ok(client)
