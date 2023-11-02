@@ -15,12 +15,14 @@ pub enum Error {
     // Auth errors
     AuthFailNoAthTokenCookie,
     AuthFailTokenWrongFormat,
+    AuthExpired,
     AuthFailCtxNotInRequestsExt,
 
     MissingDbUrl,
     MissingDbApi,
     DbConnectionError,
     DbSelectError,
+    DbDeserializeError,
 
     ConfigError,
 }

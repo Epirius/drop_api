@@ -51,7 +51,7 @@ struct RequestLogLine {
     uuid: String,
     timestamp: String,
 
-    user_id: Option<u64>,
+    user_id: Option<String>,
 
     req_path: String,
     req_method: String,
