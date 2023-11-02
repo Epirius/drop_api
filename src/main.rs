@@ -36,7 +36,14 @@ pub async fn main(
 
     let cors = CorsLayer::new()
         .allow_methods([Method::GET, Method::POST])
-        .allow_origin(Any);
+        .allow_credentials(true)
+        .allow_origin([
+            "http://localhost:3000".parse().unwrap(),
+            "http://drop.felixkaasa.dev".parse().unwrap(),
+            "https://drop.felixkaasa.dev".parse().unwrap(),
+            "http://drop-opal.vercel.app/".parse().unwrap(),
+            "https://drop-opal.vercel.app/".parse().unwrap(),
+        ]);
 
     // initialize ModelController
     let mc = ModelController::new(settings).await?;
@@ -47,7 +54,6 @@ pub async fn main(
     // initialize routes
     let routes_all = Router::new()
         .merge(routes_hello())
-        .merge(web::routes_login::routes())
         .nest("/api", routes_api)
         .layer(middleware::map_response(main_response_mapper))
         .layer(middleware::from_fn_with_state(

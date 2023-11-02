@@ -9,6 +9,7 @@ use serde::{Deserialize, Serialize};
 use std::io::{BufReader, Cursor};
 use std::sync::{Arc, Mutex};
 use uuid::Uuid;
+use crate::web::mw_auth::Session;
 
 #[derive(Clone)]
 pub struct ModelController {
@@ -20,6 +21,27 @@ impl ModelController {
         Ok(Self {
             db_client: new_client(db_settings).await?,
         })
+    }
+}
+
+impl ModelController {
+    pub async fn get_session(&self, session_token: String) -> Result<Session> {
+        println!("->> {:<12} - get_session", "HANDLER");
+        let data = self
+            .db_client
+            .from("Session")
+            .eq("sessionToken", session_token)
+            .limit(1)
+            .select("*")
+            .single()
+            .execute()
+            .await
+            .map_err(|_| Error::DbSelectError)?
+            .text()
+            .await
+            .map_err(|_| Error::DbSelectError)?;
+        let data = serde_json::from_str::<Session>(&data).map_err(|_| Error::DbDeserializeError)?;
+        Ok(data)
     }
 }
 
@@ -39,7 +61,7 @@ impl ModelController {
             .text()
             .await
             .map_err(|_| Error::DbSelectError)?;
-        let data = serde_json::from_str::<Podcast>(&data).map_err(|_| Error::DbSelectError)?;
+        let data = serde_json::from_str::<Podcast>(&data).map_err(|_| Error::DbDeserializeError)?;
         Ok(data)
     }
 
@@ -85,7 +107,7 @@ impl ModelController {
             .text()
             .await
             .map_err(|_| Error::DbSelectError)?;
-        let data = serde_json::from_str::<Vec<Podcast>>(&data).map_err(|_| Error::DbSelectError)?;
+        let data = serde_json::from_str::<Vec<Podcast>>(&data).map_err(|_| Error::DbDeserializeError)?;
         Ok(data)
     }
 
@@ -104,7 +126,7 @@ impl ModelController {
             .text()
             .await
             .map_err(|_| Error::DbSelectError)?;
-        let data = serde_json::from_str::<Vec<Podcast>>(&data).map_err(|_| Error::DbSelectError)?;
+        let data = serde_json::from_str::<Vec<Podcast>>(&data).map_err(|_| Error::DbDeserializeError)?;
         Ok(data)
     }
 
@@ -121,7 +143,7 @@ impl ModelController {
             .text()
             .await
             .map_err(|_| Error::DbSelectError)?;
-        let data = serde_json::from_str::<Vec<WrappedPodcast>>(&data).map_err(|_| Error::DbSelectError)?
+        let data = serde_json::from_str::<Vec<WrappedPodcast>>(&data).map_err(|_| Error::DbDeserializeError)?
             .into_iter()
             .map(|p| p.podcast).collect();
         Ok(data)

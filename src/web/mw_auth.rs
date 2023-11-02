@@ -2,15 +2,30 @@ use crate::ctx::Ctx;
 use crate::web::AUTH_TOKEN;
 use crate::{Error, Result};
 use async_trait::async_trait;
-use axum::extract::FromRequestParts;
+use axum::extract::{FromRequestParts, State};
 use axum::http::request::Parts;
 use axum::http::Request;
 use axum::middleware::Next;
 use axum::response::Response;
 use axum::RequestPartsExt;
+use chrono::{DateTime, Utc};
 use lazy_regex::regex_captures;
+use serde::{Deserialize, Serialize};
 use tower_cookies::cookie::time::Weekday::Wednesday;
 use tower_cookies::{Cookie, Cookies};
+use crate::model::ModelController;
+
+#[derive(Deserialize, Debug, Serialize)]
+pub struct Session {
+    id: String,
+    #[serde(alias = "sessionToken")]
+    session_token: String,
+    #[serde(alias = "userId")]
+    user_id: String,
+    expires: DateTime<Utc>,
+}
+
+
 
 pub async fn mw_require_auth<B>(
     ctx: Result<Ctx>,
@@ -24,18 +39,19 @@ pub async fn mw_require_auth<B>(
 
 pub async fn mw_ctx_resolver<B>(
     cookies: Cookies,
+    State(mc): State<ModelController>,
     mut req: Request<B>,
     next: Next<B>,
 ) -> Result<Response> {
     println!("->> {:<12} - mw_ctx_resolver", "MIDDLEWARE");
     let auth_token = cookies.get(AUTH_TOKEN).map(|c| c.value().to_string());
 
-    let result_ctx = match auth_token
-        .ok_or(Error::AuthFailNoAthTokenCookie)
-        .and_then(parse_token)
-    {
-        Ok((user_id, _exp, _sign)) => Ok(Ctx::new(user_id)),
-        Err(e) => Err(e),
+    let result_ctx = match auth_token {
+        Some(token) => match parse_token(token, mc).await {
+            Ok((user_id)) => Ok(Ctx::new(user_id)),
+            Err(e) => Err(e),
+        }
+        None => Err(Error::AuthFailNoAthTokenCookie)
     };
 
     if result_ctx.is_err() && !matches!(result_ctx, Err(Error::AuthFailNoAthTokenCookie)) {
@@ -61,13 +77,10 @@ impl<S: Send + Sync> FromRequestParts<S> for Ctx {
     }
 }
 
-// Parse token format `user-[user-id].[expiration].[signature]` nb expiration of the token, not the cookie
-// returns (user_id, expiration, signature)
-fn parse_token(token: String) -> Result<(u64, String, String)> {
-    let (_whole, user_id, exp, sign) = regex_captures!(r#"^user-(\d+)\.(.+)\.(.+)"#, &token)
-        .ok_or(Error::AuthFailTokenWrongFormat)?;
-    let user_id: u64 = user_id
-        .parse()
-        .map_err(|_| Error::AuthFailTokenWrongFormat)?;
-    Ok((user_id, exp.to_string(), sign.to_string()))
+async fn parse_token(token: String, mc: ModelController) -> Result<(String)> {
+    let session =  mc.get_session(token).await?;
+    if session.expires.le(&Utc::now()) {
+        return Err(Error::AuthExpired)
+    }
+    Ok(session.user_id)
 }
