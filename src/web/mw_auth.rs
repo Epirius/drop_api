@@ -14,7 +14,7 @@ use serde::{Deserialize, Serialize};
 use tower_cookies::cookie::time::Weekday::Wednesday;
 use tower_cookies::{Cookie, Cookies};
 use tracing::debug;
-use crate::model::ModelController;
+use crate::model::base::ModelController;
 
 #[derive(Deserialize, Debug, Serialize)]
 pub struct Session {
