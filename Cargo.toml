@@ -25,6 +25,7 @@ reqwest = "0.11.20"
 config = "0.13.3"
 tracing = "0.1"
 tracing-subscriber = {version = "0.3", features = ["env-filter"]}
+dotenv = "0.15.0"
 
 [dev-dependencies]
 anyhow = "1"

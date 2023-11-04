@@ -3,3 +3,6 @@ target/
 tests/
 Dockerfile
 scripts/
+.github/
+.idea/
+README.md

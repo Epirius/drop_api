@@ -8,7 +8,6 @@ use serde::{Deserialize, Serialize};
 use tracing::debug;
 
 pub async fn new_client(settings: DatabaseSettings) -> Result<Postgrest, Error> {
-    debug!("{:<12} READ ENV", "DATABASE");
     let client =
         Postgrest::new(settings.host).insert_header("apikey", settings.secret_key.expose_secret());
     Ok(client)

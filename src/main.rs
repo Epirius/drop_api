@@ -13,6 +13,7 @@ use serde::Deserialize;
 use serde_json::json;
 use std::net::SocketAddr;
 use axum::http::header::CONTENT_TYPE;
+use dotenv::dotenv;
 use tower_cookies::CookieManagerLayer;
 use tower_http::cors::{Any, CorsLayer};
 use tower_http::services::ServeDir;
@@ -33,11 +34,10 @@ mod model;
 
 #[tokio::main]
 pub async fn main() -> Result<()> {
-    println!(" - - - - {:?}", EnvFilter::from_default_env());
+    dotenv().ok();
     tracing_subscriber::fmt()
         .with_target(false)
-        // .with_env_filter(EnvFilter::from_default_env())
-        .with_env_filter("debug")
+        .with_env_filter(EnvFilter::from_default_env())
         .init();
 
     let settings = configuration::get_configuration().map_err(|_| Error::ConfigError)?;
@@ -73,6 +73,7 @@ pub async fn main() -> Result<()> {
         .fallback_service(routes_static())
         .layer(cors);
 
+    info!("Starting server");
     axum::Server::bind(&"0.0.0.0:8080".parse().unwrap())
         .serve(routes_all.into_make_service())
         .await
