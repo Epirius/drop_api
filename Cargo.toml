@@ -23,9 +23,6 @@ secrecy = { version = "0.8.0", features = ["serde"] }
 rss = "2"
 reqwest = "0.11.20"
 config = "0.13.3"
-shuttle-runtime = { version = "0.30.1", default-features = false }
-shuttle-axum = "0.30.1"
-shuttle-secrets = "0.30.1"
 tracing = "0.1"
 tracing-subscriber = {version = "0.3", features = ["env-filter"]}
 
