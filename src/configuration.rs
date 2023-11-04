@@ -1,21 +1,19 @@
 use secrecy::{ExposeSecret, Secret};
 use std::net::Ipv4Addr;
-use config::ConfigError;
-use shuttle_secrets::SecretStore;
+use tracing::info;
+use crate::Error::ConfigError;
+use crate::Error;
 
 pub struct DatabaseSettings {
     pub host: String,
     pub secret_key: Secret<String>,
 }
-pub fn get_configuration(secrets: &SecretStore) -> Result<DatabaseSettings, config::ConfigError> {
-    let db_secret_key = if let Some(db_secret_key) = secrets.get("db_secret_key") {
-        db_secret_key
-    } else {return Err(config::ConfigError::NotFound(String::from("db_secret_key")))};
-    let db_host = if let Some(db_host) = secrets.get("db_host") {
-        db_host
-    } else {return Err(config::ConfigError::NotFound(String::from("db_host")))};
+pub fn get_configuration() -> Result<DatabaseSettings, Error> {
+    info!("Reading config variables");
+    let host = std::env::var("db_host").map_err(|_| ConfigError)?;
+    let db_secret = std::env::var("db_secret_key").map_err(|_| ConfigError)?;
     Ok(DatabaseSettings {
-            host: db_host,
-            secret_key: Secret::new(db_secret_key),
+        host,
+        secret_key: Secret::new(db_secret),
     })
 }

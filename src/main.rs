@@ -5,20 +5,22 @@ use crate::database::Podcast;
 use crate::log::log_request;
 use crate::model::base::ModelController;
 use axum::extract::{Path, Query};
-use axum::http::{Method, Uri};
+use axum::http::{HeaderName, Method, Uri};
 use axum::response::{Html, IntoResponse, Response};
 use axum::routing::{get, get_service};
-use axum::{middleware, Json, Router};
+use axum::{middleware, Json, Router, http};
 use serde::Deserialize;
 use serde_json::json;
-use shuttle_secrets::SecretStore;
 use std::net::SocketAddr;
+use axum::http::header::CONTENT_TYPE;
+use dotenv::dotenv;
 use tower_cookies::CookieManagerLayer;
 use tower_http::cors::{Any, CorsLayer};
 use tower_http::services::ServeDir;
 use tracing::{debug, info};
 use tracing_subscriber::EnvFilter;
 use uuid::Uuid;
+use http::header::{COOKIE, AUTHORIZATION, SET_COOKIE};
 
 pub use self::error::{Error, Result};
 
@@ -30,16 +32,15 @@ mod log;
 mod web;
 mod model;
 
-#[shuttle_runtime::main]
-pub async fn main(#[shuttle_secrets::Secrets] secrets: SecretStore) -> shuttle_axum::ShuttleAxum {
-    println!(" - - - - {:?}", EnvFilter::from_default_env());
+#[tokio::main]
+pub async fn main() -> Result<()> {
+    dotenv().ok();
     tracing_subscriber::fmt()
         .with_target(false)
-        // .with_env_filter(EnvFilter::from_default_env())
-        .with_env_filter("debug")
+        .with_env_filter(EnvFilter::from_default_env())
         .init();
 
-    let settings = configuration::get_configuration(&secrets).map_err(|_| Error::ConfigError)?;
+    let settings = configuration::get_configuration().map_err(|_| Error::ConfigError)?;
 
     let cors = CorsLayer::new()
         .allow_methods([Method::GET, Method::POST, Method::DELETE]) // TODO maybe break methods up base on the specific routes
@@ -52,16 +53,14 @@ pub async fn main(#[shuttle_secrets::Secrets] secrets: SecretStore) -> shuttle_a
             "https://drop-opal.vercel.app/".parse().unwrap(),
         ]);
 
-    // initialize ModelController
     let mc = ModelController::new(settings).await?;
 
     let routes_api =
         web::routes_subscribe::routes(mc.clone())
         .route_layer(middleware::from_fn(web::mw_auth::mw_require_auth)) // TODO: dont require auth for all routes
-            .merge(web::routes_pordcast::routes(mc.clone()));
+            .merge(web::routes_podcast::routes(mc.clone()));
     //.route_layer(middleware::from_fn(web::mw_auth::mw_require_auth)); // TODO: dont require auth for all routes
 
-    // initialize routes
     let routes_all = Router::new()
         .merge(routes_hello())
         .nest("/api", routes_api)
@@ -71,9 +70,15 @@ pub async fn main(#[shuttle_secrets::Secrets] secrets: SecretStore) -> shuttle_a
             web::mw_auth::mw_ctx_resolver,
         ))
         .layer(CookieManagerLayer::new())
-        .layer(cors)
-        .fallback_service(routes_static());
-    Ok(routes_all.into())
+        .fallback_service(routes_static())
+        .layer(cors);
+
+    info!("Starting server");
+    axum::Server::bind(&"0.0.0.0:8080".parse().unwrap())
+        .serve(routes_all.into_make_service())
+        .await
+        .unwrap();
+    Ok(())
 }
 
 async fn main_response_mapper(

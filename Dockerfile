@@ -21,7 +21,7 @@ RUN apt-get update -y \
     && apt-get clean -y \
     && rm -rf /var/lib/apt/lists/*
 COPY --from=builer /app/target/release/drop_api drop_api
-COPY configuration configuration
+#COPY configuration configuration
 ENV APP_ENVIRONMENT production
 ENV PORT 8080
 ENV HOST 0.0.0.0
