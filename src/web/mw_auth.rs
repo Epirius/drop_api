@@ -1,5 +1,5 @@
 use crate::ctx::Ctx;
-use crate::web::AUTH_TOKEN;
+use crate::web::{AUTH_TOKEN, SECURE_AUTH_TOKEN};
 use crate::{Error, Result};
 use async_trait::async_trait;
 use axum::extract::{FromRequestParts, State};
@@ -45,7 +45,10 @@ pub async fn mw_ctx_resolver<B>(
     next: Next<B>,
 ) -> Result<Response> {
     debug!(" {:<12} - mw_ctx_resolver", "MIDDLEWARE");
-    let auth_token = cookies.get(AUTH_TOKEN).map(|c| c.value().to_string());
+    let mut auth_token = cookies.get(AUTH_TOKEN).map(|c| c.value().to_string());
+    if auth_token.is_none() {
+        auth_token = cookies.get(SECURE_AUTH_TOKEN).map(|c| c.value().to_string());
+    }
 
     let result_ctx = match auth_token {
         Some(token) => match parse_token(token, mc).await {

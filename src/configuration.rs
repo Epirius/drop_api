@@ -4,6 +4,7 @@ use tracing::info;
 use crate::Error::ConfigError;
 use crate::Error;
 
+#[derive(Clone)]
 pub struct DatabaseSettings {
     pub host: String,
     pub secret_key: Secret<String>,
