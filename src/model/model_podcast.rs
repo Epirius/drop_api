@@ -70,13 +70,13 @@ impl ModelController {
         Ok(data)
     }
 
-    pub async fn get_podcast_list_by_search(&self, search: String) -> Result<Vec<Podcast>> {
+    pub async fn get_podcast_list_by_search(&self, search: String, quantity: usize) -> Result<Vec<Podcast>> {
         debug!(" {:<12} - get_podcast_list_by_search", "HANDLER");
         let mut query = self
             .db_client
             .from("Podcast")
             .wfts("title", search, None)
-            .limit(10);
+            .limit(quantity);
 
         let data = query
             .execute()

@@ -8,6 +8,7 @@ use axum::{Json, Router};
 use serde_json::json;
 use serde::Deserialize;
 use tracing::debug;
+use crate::web::MAX_QUANTITY;
 
 
 pub fn routes(mc: ModelController) -> Router {
@@ -62,7 +63,7 @@ async fn get_podcasts_by_category(
     Query(params): Query<ByCategoryParams>,
 ) -> Result<Json<Vec<PodcastMetadata>>> {
     debug!(" {:<12} - get_podcasts_by_category", "HANDLER");
-    let quantity = std::cmp::min( params.quantity.unwrap_or(25), 100);
+    let quantity = std::cmp::min( params.quantity.unwrap_or(25), MAX_QUANTITY);
     let podcasts = mc.get_podcast_list(params.category, quantity, params.lang).await?;
     let metadata_list: Vec<PodcastMetadata> = podcasts.into_iter().map(|p| p.into()).collect();
     Ok(Json(metadata_list))
@@ -71,6 +72,7 @@ async fn get_podcasts_by_category(
 #[derive(Debug, Deserialize)]
 struct BySearchParams {
     search: String,
+    quantity: Option<usize>,
 }
 
 async fn get_podcasts_by_search(
@@ -79,7 +81,8 @@ async fn get_podcasts_by_search(
 ) -> Result<Json<Vec<PodcastMetadata>>> {
     debug!(" {:<12} - get_podcasts_by_search", "HANDLER");
     let search_query = params.search;
-    let podcasts = mc.get_podcast_list_by_search(search_query).await?;
+    let quantity = std::cmp::min( params.quantity.unwrap_or(25), MAX_QUANTITY);
+    let podcasts = mc.get_podcast_list_by_search(search_query, quantity).await?;
     let metadata_list: Vec<PodcastMetadata> = podcasts.into_iter().map(|p| p.into()).collect();
     Ok(Json(metadata_list))
 }
