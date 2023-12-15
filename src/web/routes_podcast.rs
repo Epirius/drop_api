@@ -8,7 +8,8 @@ use axum::{Json, Router};
 use serde_json::json;
 use serde::Deserialize;
 use tracing::debug;
-use crate::web::MAX_QUANTITY;
+use crate::web::MAX_PAGE_LENGTH;
+use std::cmp::{min, max};
 
 
 pub fn routes(mc: ModelController) -> Router {
@@ -54,7 +55,8 @@ async fn get_episode_list(
 #[derive(Debug, Deserialize)]
 struct ByCategoryParams {
     category: String,
-    quantity: Option<usize>,
+    page_length: Option<usize>,
+    page_number: Option<usize>,
     lang: Option<String>,
 }
 
@@ -63,8 +65,10 @@ async fn get_podcasts_by_category(
     Query(params): Query<ByCategoryParams>,
 ) -> Result<Json<Vec<PodcastMetadata>>> {
     debug!(" {:<12} - get_podcasts_by_category", "HANDLER");
-    let quantity = std::cmp::min( params.quantity.unwrap_or(25), MAX_QUANTITY);
-    let podcasts = mc.get_podcast_list(params.category, quantity, params.lang).await?;
+    let page_length = std::cmp::min(params.page_length.unwrap_or(25), MAX_PAGE_LENGTH);
+    let page_number = max(params.page_number.unwrap_or(1), 1);
+
+    let podcasts = mc.get_podcast_list(params.category, page_length, page_number, params.lang).await?;
     let metadata_list: Vec<PodcastMetadata> = podcasts.into_iter().map(|p| p.into()).collect();
     Ok(Json(metadata_list))
 }
@@ -72,7 +76,9 @@ async fn get_podcasts_by_category(
 #[derive(Debug, Deserialize)]
 struct BySearchParams {
     search: String,
-    quantity: Option<usize>,
+    page_length: Option<usize>,
+    page_number: Option<usize>,
+    lang: Option<String>,
 }
 
 async fn get_podcasts_by_search(
@@ -81,8 +87,10 @@ async fn get_podcasts_by_search(
 ) -> Result<Json<Vec<PodcastMetadata>>> {
     debug!(" {:<12} - get_podcasts_by_search", "HANDLER");
     let search_query = params.search;
-    let quantity = std::cmp::min( params.quantity.unwrap_or(25), MAX_QUANTITY);
-    let podcasts = mc.get_podcast_list_by_search(search_query, quantity).await?;
+    let page_length = max(min(params.page_length.unwrap_or(25), MAX_PAGE_LENGTH), 1);
+    let page_number = max(params.page_number.unwrap_or(1), 1);
+
+    let podcasts = mc.get_podcast_list_by_search(search_query, page_length, page_number, params.lang).await?;
     let metadata_list: Vec<PodcastMetadata> = podcasts.into_iter().map(|p| p.into()).collect();
     Ok(Json(metadata_list))
 }
