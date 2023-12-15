@@ -1,3 +1,4 @@
+use postgrest::Postgrest;
 use rss::Channel;
 use crate::database::{Episode, Podcast, WrappedPodcast};
 use crate::error::{Error, Result};
@@ -7,19 +8,15 @@ use tracing::debug;
 impl ModelController {
     pub async fn get_podcast(&self, guid: String) -> Result<Podcast> {
         debug!(" {:<12} - get_podcast", "HANDLER");
-        let data = self
+        let query = self
             .db_client
             .from("Podcast")
             .eq("guid", guid)
             .limit(1)
             .select("*")
-            .single()
-            .execute()
-            .await
-            .map_err(|_| Error::DbSelectError)?
-            .text()
-            .await
-            .map_err(|_| Error::DbSelectError)?;
+            .single();
+
+        let data = execute_query(query).await?;
         let data = serde_json::from_str::<Podcast>(&data).map_err(|_| Error::DbDeserializeError)?;
         Ok(data)
     }
@@ -46,48 +43,46 @@ impl ModelController {
         Ok(episodes)
     }
 
-    pub async fn get_podcast_list(&self, category: String, quantity: usize, lang: Option<String>) -> Result<Vec<Podcast>> {
+    pub async fn get_podcast_list(&self, category: String, page_length: usize, page_number: usize, lang: Option<String>) -> Result<Vec<Podcast>> {
         debug!(" {:<12} - get_podcast_list", "HANDLER");
         let mut query = self
             .db_client
             .from("Podcast")
             .ilike("category", format!("%{}%", category)) // TODO: change from ilike to full text search
             .order("priority.desc")
-            .limit(quantity);
-
+            .range(page_length * (page_number - 1), page_length * page_number);
         if let Some(lang) = lang {
             query = query.ilike("languageCode",lang);
         }
 
-        let data = query
-            .execute()
-            .await
-            .map_err(|_| Error::DbSelectError)?
-            .text()
-            .await
-            .map_err(|_| Error::DbSelectError)?;
+        let data = execute_query(query).await?;
         let data = serde_json::from_str::<Vec<Podcast>>(&data).map_err(|_| Error::DbDeserializeError)?;
         Ok(data)
     }
 
-    pub async fn get_podcast_list_by_search(&self, search: String, quantity: usize) -> Result<Vec<Podcast>> {
+    pub async fn get_podcast_list_by_search(&self, search: String, page_length: usize, page_number: usize, lang: Option<String>) -> Result<Vec<Podcast>> {
         debug!(" {:<12} - get_podcast_list_by_search", "HANDLER");
         let mut query = self
             .db_client
             .from("Podcast")
             .wfts("title", search, None)
-            .limit(quantity);
+            .range(page_length * (page_number - 1), page_length * page_number);
+        if let Some(lang) = lang {
+            query = query.ilike("languageCode",lang);
+        }
 
-        let data = query
-            .execute()
-            .await
-            .map_err(|_| Error::DbSelectError)?
-            .text()
-            .await
-            .map_err(|_| Error::DbSelectError)?;
+        let data = execute_query(query).await?;
         let data = serde_json::from_str::<Vec<Podcast>>(&data).map_err(|_| Error::DbDeserializeError)?;
         Ok(data)
     }
+}
 
-
+async fn execute_query(query: postgrest::Builder) -> Result<String>{
+    Ok(query
+        .execute()
+        .await
+        .map_err(|_| Error::DbSelectError)?
+        .text()
+        .await
+        .map_err(|_| Error::DbSelectError)?)
 }
