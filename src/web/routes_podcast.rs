@@ -11,6 +11,8 @@ use tracing::debug;
 use crate::web::MAX_PAGE_LENGTH;
 use std::cmp::{min, max};
 
+use super::{EDITOR_UUID, MOST_POPULAR};
+
 
 pub fn routes(mc: ModelController) -> Router {
     Router::new()
@@ -98,12 +100,16 @@ async fn get_podcasts_by_search(
 async fn get_frontpage_podcasts(
     State(mc): State<ModelController>,
 ) -> Result<Json<FrontpagePodcasts>> {
-    let editor_uuid = "4e8e7da8-3ef9-4ab5-afb5-b9b14194aca9";
-    let podcasts = mc.get_subscribed_podcasts(editor_uuid).await?;
-    let metadata_list: Vec<PodcastMetadata> = podcasts.into_iter().map(|p| p.into()).collect();
+    let editors_podcasts = mc.get_subscribed_podcasts(EDITOR_UUID).await?;
+    let editors_metadata_list: Vec<PodcastMetadata> = editors_podcasts.into_iter().map(|p| p.into()).collect();
+
+
+    let popular_podcasts = mc.get_subscribed_podcasts(MOST_POPULAR).await?;
+    let popular_metadata_list: Vec<PodcastMetadata> = popular_podcasts.into_iter().map(|p| p.into()).collect();
+
     Ok(Json(FrontpagePodcasts {
-        editors_choice: metadata_list,
-        popular: Vec::new(),
+        editors_choice: editors_metadata_list,
+        popular: popular_metadata_list,
     }))
 }
 
