@@ -1,7 +1,7 @@
 use crate::configuration::DatabaseSettings;
 use crate::Error;
 use chrono::{DateTime, Utc};
-use postgrest::Postgrest;
+use postgrest::{Builder, Postgrest};
 use rss::Item;
 use secrecy::{ExposeSecret, Secret};
 use serde::{Deserialize, Serialize};
@@ -71,6 +71,25 @@ pub struct Podcast {
     #[serde(alias = "languageCode")]
     pub language_code: String,
 }
+
+impl Podcast {
+    pub async fn get<T: serde::de::DeserializeOwned>(query: Builder) -> crate::error::Result<T> {
+        let data = Self::execute_query(query).await?;
+        let data = serde_json::from_str::<T>(&data).map_err(|_| Error::DbDeserializeError)?;
+        Ok(data)
+    }
+
+    async fn execute_query(query: postgrest::Builder) -> crate::error::Result<String>{
+        Ok(query
+            .execute()
+            .await
+            .map_err(|_| Error::DbSelectError)?
+            .text()
+            .await
+            .map_err(|_| Error::DbSelectError)?)
+    }
+}
+
 
 #[derive(Deserialize, Debug, Serialize)]
 pub struct PodcastMetadata {

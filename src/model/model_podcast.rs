@@ -8,17 +8,13 @@ use tracing::debug;
 impl ModelController {
     pub async fn get_podcast(&self, guid: String) -> Result<Podcast> {
         debug!(" {:<12} - get_podcast", "HANDLER");
-        let query = self
-            .db_client
-            .from("Podcast")
-            .eq("guid", guid)
-            .limit(1)
-            .select("*")
-            .single();
-
-        let data = execute_query(query).await?;
-        let data = serde_json::from_str::<Podcast>(&data).map_err(|_| Error::DbDeserializeError)?;
-        Ok(data)
+        Podcast::get::<Podcast>(self
+                         .db_client
+                         .from("Podcast")
+                         .eq("guid", guid)
+                         .limit(1)
+                         .select("*")
+                         .single()).await
     }
 
     pub async fn get_episode_list(&self, guid: String) -> Result<Vec<Episode>> {
@@ -54,10 +50,7 @@ impl ModelController {
         if let Some(lang) = lang {
             query = query.ilike("languageCode",lang);
         }
-
-        let data = execute_query(query).await?;
-        let data = serde_json::from_str::<Vec<Podcast>>(&data).map_err(|_| Error::DbDeserializeError)?;
-        Ok(data)
+        Podcast::get::<Vec<Podcast>>(query).await
     }
 
     pub async fn get_podcast_list_by_search(&self, search: String, page_length: usize, page_number: usize, lang: Option<String>) -> Result<Vec<Podcast>> {
@@ -71,18 +64,6 @@ impl ModelController {
             query = query.ilike("languageCode",lang);
         }
 
-        let data = execute_query(query).await?;
-        let data = serde_json::from_str::<Vec<Podcast>>(&data).map_err(|_| Error::DbDeserializeError)?;
-        Ok(data)
+        Podcast::get::<Vec<Podcast>>(query).await
     }
-}
-
-async fn execute_query(query: postgrest::Builder) -> Result<String>{
-    Ok(query
-        .execute()
-        .await
-        .map_err(|_| Error::DbSelectError)?
-        .text()
-        .await
-        .map_err(|_| Error::DbSelectError)?)
 }
